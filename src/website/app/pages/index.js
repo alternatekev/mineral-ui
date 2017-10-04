@@ -20,11 +20,11 @@ import Theming from './Theming';
 import Color from './Color';
 import Typography from './Typography';
 import ComponentStatus from './ComponentStatus';
+import ThemeDemo from './ThemeDemo';
 
 type Page = {
   component: React$ComponentType<*>,
-  id?: string,
-  path: string,
+  path?: string,
   hiddenInNav?: boolean,
   title: string
 };
@@ -59,6 +59,11 @@ const sections: Array<Section> = [
         component: Theming,
         path: '/theming',
         title: 'Theming'
+      },
+      {
+        component: ThemeDemo,
+        path: '/theme-demo',
+        title: 'Theme Demo'
       }
     ]
   },
