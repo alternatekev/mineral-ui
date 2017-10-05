@@ -15,11 +15,12 @@
  */
 
 /* @flow */
-import React, { Component } from 'react';
+import React, { cloneElement, Component } from 'react';
 import { findDOMNode } from 'react-dom';
 import { Manager } from 'react-popper';
 import { createStyledComponent, generateId } from '../utils';
 import EventListener from '../EventListener';
+import Portal from '../Portal';
 import PopoverTrigger from './PopoverTrigger';
 import PopoverContent from './PopoverContent';
 
@@ -67,6 +68,8 @@ type Props = {
   title?: React$Node,
   /** @Private ref for the Popover trigger */
   triggerRef?: (node: ?React$Component<*, *>) => void,
+  /** Use a Portal to render the Popover to the body rather than as a sibling to the trigger */
+  usePortal?: boolean,
   /** Display the content with default styles */
   wrapContent?: boolean
 };
@@ -123,6 +126,7 @@ export default class Popover extends Component<Props, State> {
       subtitle,
       title,
       triggerRef,
+      usePortal,
       wrapContent,
       ...restProps
     } = this.props;
@@ -159,6 +163,9 @@ export default class Popover extends Component<Props, State> {
           id: contentId,
           modifiers,
           placement,
+          ref: node => {
+            this.popoverContent = node;
+          },
           subtitle,
           title
         };
@@ -167,7 +174,15 @@ export default class Popover extends Component<Props, State> {
           <PopoverContent {...popoverContentProps}>{content}</PopoverContent>
         );
       } else {
-        popoverContent = content;
+        popoverContent = cloneElement(content, {
+          ref: node => {
+            this.popoverContent = node;
+          }
+        });
+      }
+
+      if (usePortal) {
+        popoverContent = <Portal>{popoverContent}</Portal>;
       }
     }
 
@@ -236,14 +251,31 @@ export default class Popover extends Component<Props, State> {
   };
 
   isClickOutsideComponent = (event: SyntheticEvent<>) => {
-    const node = findDOMNode(this); // eslint-disable-line react/no-find-dom-node
-    return (
-      node &&
-      node instanceof HTMLElement &&
-      event.target &&
-      event.target instanceof HTMLElement &&
-      !node.contains(event.target)
-    );
+    /* eslint-disable react/no-find-dom-node */
+    const { usePortal } = this.props;
+    const node = findDOMNode(this);
+    const popoverContentNode = findDOMNode(this.popoverContent);
+
+    if (usePortal) {
+      return (
+        node &&
+        node instanceof HTMLElement &&
+        event.target &&
+        event.target instanceof HTMLElement &&
+        !node.contains(event.target) &&
+        popoverContentNode &&
+        popoverContentNode instanceof HTMLElement &&
+        !popoverContentNode.contains(event.target)
+      );
+    } else {
+      return (
+        node &&
+        node instanceof HTMLElement &&
+        event.target &&
+        event.target instanceof HTMLElement &&
+        !node.contains(event.target)
+      );
+    }
   };
 
   isControlled = () => {
